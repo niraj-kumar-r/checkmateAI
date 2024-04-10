@@ -2,13 +2,13 @@ import chess
 
 
 def minimax(depth, board, is_maximizing):
-    if (depth == 0 and is_maximizing):
+    if (depth == 0 or board.is_game_over()) and is_maximizing:
         return evaluation_heuristic(board)
-    elif (depth == 0 and not is_maximizing):
+    elif (depth == 0 or board.is_game_over()) and not is_maximizing:
         return -evaluation_heuristic(board)
     possibleMoves = board.legal_moves
     if (is_maximizing):
-        bestValue = -9999
+        bestValue = -99999
         for move_ in possibleMoves:
             move = move_
             board.push(move)
@@ -17,7 +17,7 @@ def minimax(depth, board, is_maximizing):
             board.pop()
         return bestValue
     else:
-        bestValue = 9999
+        bestValue = 99999
         for move_ in possibleMoves:
             move = move_
             board.push(move)
@@ -38,35 +38,39 @@ def evaluation_heuristic(board):
     while i < 63:
         i += 1
         evaluation_heuristic = evaluation_heuristic + \
-            (getValue(str(board.piece_at(i)))
-             if isWhite else -getValue(str(board.piece_at(i))))
+            (getValue(str(board.piece_at(i)), i)
+             if isWhite else -getValue(str(board.piece_at(i)), i))
     return evaluation_heuristic
 
 
-def getValue(piece):
+def getValue(piece, i):
+    r = i//8
+    c = i % 8
+    # Favouring the center of the board using a scaling factor
+    alpha = ((16 - (abs(4.0-r)*abs(4.0-c)))//5)*0.3
     if (piece == None):
         return 0
     value = 0
-    if piece == "P" or piece == "p":
+    if piece.lower() == "p":
         value = 10
-    if piece == "N" or piece == "n":
+    if piece.lower() == "n":
         value = 30
-    if piece == "B" or piece == "b":  # Following Bobby Fischer's idea of B being worth more than N
+    if piece.lower() == "b":  # Following Bobby Fischer's idea of B being worth more than N
         value = 33
-    if piece == "R" or piece == "r":
+    if piece.lower() == "r":
         value = 50
-    if piece == "Q" or piece == "q":
+    if piece.lower() == "q":
         value = 90
-    if piece == 'K' or piece == 'k':
+    if piece.lower() == 'k':
         value = 999
-    return value
+    return value*alpha
 
 
 def minimaxHandler(depth, board, isMaximizing):
     possibleMoves = board.legal_moves
-    bestValue = 9999
-    secondBest = 9999
-    thirdBest = 9999
+    bestValue = 999999
+    secondBest = 999999
+    thirdBest = 999999
     bestMoveFinal = None
     for move_ in possibleMoves:
         move = move_
@@ -86,7 +90,7 @@ def main():
     n = 0
     print(board.unicode(invert_color=True, borders=True).replace(
         '⭘', ' ').replace(' -----------------\n', ''))
-    while n < 100:
+    while board.is_game_over() == False:
         try:
             if n % 2 == 0:
                 move = input("Enter move: ")
@@ -94,6 +98,7 @@ def main():
             else:
                 print("Computers Turn:")
                 move = minimaxHandler(3, board, False)
+                print(board.san(move))
                 board.push(move)
             print(board.unicode(invert_color=True, borders=True).replace(
                 '⭘', ' ').replace(' -----------------\n', ''))
