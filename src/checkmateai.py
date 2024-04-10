@@ -84,7 +84,8 @@ def minimaxHandler(depth, board, isMaximizing):
 def main():
     board = chess.Board()
     n = 0
-    print(board.unicode(invert_color=True, borders=True).replace('⭘', ' '))
+    print(board.unicode(invert_color=True, borders=True).replace(
+        '⭘', ' ').replace(' -----------------\n', ''))
     while n < 100:
         try:
             if n % 2 == 0:
@@ -92,9 +93,10 @@ def main():
                 board.push_san(move)
             else:
                 print("Computers Turn:")
-                move = minimaxHandler(4, board, False)
+                move = minimaxHandler(3, board, False)
                 board.push(move)
-            print(board.unicode(invert_color=True, borders=True).replace('⭘', ' '))
+            print(board.unicode(invert_color=True, borders=True).replace(
+                '⭘', ' ').replace(' -----------------\n', ''))
         except (chess.IllegalMoveError, chess.InvalidMoveError) as e:
             print("illegal move")
             continue
