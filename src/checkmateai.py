@@ -1,30 +1,44 @@
 import chess
 
+from multiprocessing import Pool
 
-def minimax(depth, board, is_maximizing):
+
+from multiprocessing import Process, Queue
+
+
+def minimax(depth, board, is_maximizing, queue):
     if (depth == 0 and is_maximizing):
         return evaluation_heuristic(board)
     elif (depth == 0 and not is_maximizing):
         return -evaluation_heuristic(board)
-    possibleMoves = board.legal_moves
-    if (is_maximizing):
-        bestValue = -9999
-        for move_ in possibleMoves:
-            move = move_
-            board.push(move)
-            bestValue = max(bestValue, minimax(
-                depth - 1, board, not is_maximizing))
-            board.pop()
-        return bestValue
     else:
-        bestValue = 9999
-        for move_ in possibleMoves:
-            move = move_
-            board.push(move)
-            bestValue = min(bestValue, minimax(
-                depth - 1, board, not is_maximizing))
-            board.pop()
-        return bestValue
+        possibleMoves = list(board.legal_moves)
+        if (is_maximizing):
+            bestValue = -9999
+            for move in possibleMoves:
+                new_board = board.copy()
+                new_board.push(move)
+                q = Queue()
+                p = Process(target=minimax, args=(
+                    depth - 1, new_board, not is_maximizing, q))
+                p.start()
+                p.join()
+                value = q.get()
+                bestValue = max(bestValue, value)
+            queue.put(bestValue)
+        else:
+            bestValue = 9999
+            for move in possibleMoves:
+                new_board = board.copy()
+                new_board.push(move)
+                q = Queue()
+                p = Process(target=minimax, args=(
+                    depth - 1, new_board, not is_maximizing, q))
+                p.start()
+                p.join()
+                value = q.get()
+                bestValue = min(bestValue, value)
+            queue.put(bestValue)
 
 
 def evaluation_heuristic(board):
@@ -71,7 +85,9 @@ def minimaxHandler(depth, board, isMaximizing):
     for move_ in possibleMoves:
         move = move_
         board.push(move)
-        value = min(bestValue, minimax(depth - 1, board, not isMaximizing))
+        q = Queue()
+        val = minimax(depth - 1, board, not isMaximizing, q)
+        value = min(bestValue, val)
         board.pop()
         if (value < bestValue):
             thirdBest = secondBest
@@ -93,7 +109,7 @@ def main():
                 board.push_san(move)
             else:
                 print("Computers Turn:")
-                move = minimaxHandler(3, board, False)
+                move = minimaxHandler(2, board, False)
                 board.push(move)
             print(board.unicode(invert_color=True, borders=True).replace(
                 '⭘', ' ').replace(' -----------------\n', ''))
