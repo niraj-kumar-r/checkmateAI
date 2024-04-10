@@ -1,46 +1,45 @@
-import math
-import random
-import sys
 import chess
 
 
 def minimax(depth, board, is_maximizing):
-    if (depth == 0):
+    if (depth == 0 and is_maximizing):
+        return evaluation_heuristic(board)
+    elif (depth == 0 and not is_maximizing):
         return -evaluation_heuristic(board)
     possibleMoves = board.legal_moves
     if (is_maximizing):
-        bestMove = -9999
-        for x in possibleMoves:
-            move = x
+        bestValue = -9999
+        for move_ in possibleMoves:
+            move = move_
             board.push(move)
-            bestMove = max(bestMove, minimax(
+            bestValue = max(bestValue, minimax(
                 depth - 1, board, not is_maximizing))
             board.pop()
-        return bestMove
+        return bestValue
     else:
-        bestMove = 9999
-        for x in possibleMoves:
-            move = x
+        bestValue = 9999
+        for move_ in possibleMoves:
+            move = move_
             board.push(move)
-            bestMove = min(bestMove, minimax(
+            bestValue = min(bestValue, minimax(
                 depth - 1, board, not is_maximizing))
             board.pop()
-        return bestMove
+        return bestValue
 
 
 def evaluation_heuristic(board):
     i = 0
     evaluation_heuristic = 0
-    x = True
+    isWhite = True
     try:
-        x = bool(board.piece_at(i).color)
+        isWhite = bool(board.piece_at(i).color)
     except AttributeError as e:
-        x = x
+        isWhite = isWhite
     while i < 63:
         i += 1
         evaluation_heuristic = evaluation_heuristic + \
             (getValue(str(board.piece_at(i)))
-             if x else -getValue(str(board.piece_at(i))))
+             if isWhite else -getValue(str(board.piece_at(i))))
     return evaluation_heuristic
 
 
@@ -52,36 +51,32 @@ def getValue(piece):
         value = 10
     if piece == "N" or piece == "n":
         value = 30
-    if piece == "B" or piece == "b":
-        value = 30
+    if piece == "B" or piece == "b":  # Following Bobby Fischer's idea of B being worth more than N
+        value = 33
     if piece == "R" or piece == "r":
         value = 50
     if piece == "Q" or piece == "q":
         value = 90
     if piece == 'K' or piece == 'k':
-        value = 900
-    # value = value if (board.piece_at(place)).color else -value
+        value = 999
     return value
 
 
 def minimaxHandler(depth, board, isMaximizing):
     possibleMoves = board.legal_moves
-    bestMove = -9999
-    secondBest = -9999
-    thirdBest = -9999
+    bestValue = 9999
+    secondBest = 9999
+    thirdBest = 9999
     bestMoveFinal = None
-    for x in possibleMoves:
-        move = x
+    for move_ in possibleMoves:
+        move = move_
         board.push(move)
-        value = max(bestMove, minimax(depth - 1, board, not isMaximizing))
+        value = min(bestValue, minimax(depth - 1, board, not isMaximizing))
         board.pop()
-        if (value > bestMove):
-            print("Best score: ", str(bestMove))
-            print("Best move: ", str(bestMoveFinal))
-            print("Second best: ", str(secondBest))
+        if (value < bestValue):
             thirdBest = secondBest
-            secondBest = bestMove
-            bestMove = value
+            secondBest = bestValue
+            bestValue = value
             bestMoveFinal = move
     return bestMoveFinal
 
@@ -89,16 +84,20 @@ def minimaxHandler(depth, board, isMaximizing):
 def main():
     board = chess.Board()
     n = 0
-    print(board)
+    print(board.unicode(invert_color=True, borders=True).replace('⭘', ' '))
     while n < 100:
-        if n % 2 == 0:
-            move = input("Enter move: ")
-            board.push_san(move)
-        else:
-            print("Computers Turn:")
-            move = minimaxHandler(4, board, True)
-            board.push(move)
-        print(board)
+        try:
+            if n % 2 == 0:
+                move = input("Enter move: ")
+                board.push_san(move)
+            else:
+                print("Computers Turn:")
+                move = minimaxHandler(4, board, False)
+                board.push(move)
+            print(board.unicode(invert_color=True, borders=True).replace('⭘', ' '))
+        except (chess.IllegalMoveError, chess.InvalidMoveError) as e:
+            print("illegal move")
+            continue
         n += 1
 
 
